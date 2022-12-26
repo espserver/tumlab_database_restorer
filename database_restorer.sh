@@ -9,11 +9,16 @@ dump_list="/tumlab/syncthing/dump.txt"
 echo "dump_list="$dump_list
 
 # Maximum .sql file creation time to restore (in minutes)
-max_modification_time="5200"
+max_modification_time="30"
 echo "max_modification_time="$max_modification_time
 
+mysql_user="ramiro"
+mysql_password="Ramiro"
+postgres_user="postgres"
+postgres_password="Ramiro"
+echo $postgres_password
 
-# Search files in Syncting folder modified in 5200 mins and type is .sql
+# Search files in Syncting folder modified in 30 mins and type is .sql
 find "$devices_path" -type f -mmin -"$max_modification_time" -and -type f -iname "*.sql" > "$dump_list"
 
 # se debe crear un archivo que contenga la contraseña del usuario de la base de datos
@@ -34,11 +39,15 @@ do
     date=$(echo "$file_name" | awk -F '_' '{print $4,$5}'| awk -F '.' '{print $1}')
     echo "date=$date"
     echo "$line"
-    psql -h localhost -U postgres -c "DROP DATABASE $db_name"
-    psql -h localhost -U postgres -c "CREATE DATABASE $db_name"
-    psql -h localhost -U postgres -d "$db_name" -f "$line"
+    psql -h localhost -U $postgres_user -c "DROP DATABASE $db_name"
+    psql -h localhost -U $postgres_user -c "CREATE DATABASE $db_name"
+    psql -h localhost -U $postgres_user -d "$db_name" -f "$line"
     check_error="$?"
-    echo "$check_error"
+    if [[ check_error -eq 0 ]]; then
+      echo "Successful restore of $db_name database"
+    else
+      echo "Failed restore $db_name database"
+    fi
     # Consultar como implementar esta funcion
     #if [[ check_error -eq 0 ]]; then
     #  restorer_db="restorer_db_${tumlab_name}_${db_vendor}_${db_name}"
@@ -60,11 +69,14 @@ do
     date=$(echo "$file_name" | awk -F '_' '{print $4,$5}'| awk -F '.' '{print $1}')
     echo "date=$date"
     echo "$line"
-    mysql -u ramiro -pRamiro --execute="DROP DATABASE $db_name;CREATE DATABASE $db_name"
-    mysql -u ramiro -pRamiro "$db_name" < "$line"
+    mysql -u $mysql_user -p$mysql_password --execute="DROP DATABASE $db_name;CREATE DATABASE $db_name"
+    mysql -u $mysql_user -p$mysql_password "$db_name" < "$line"
     check_error="$?"
-    echo "$check_error"
+    if [[ check_error -eq 0 ]]; then
+      echo "Successful restore of $db_name database"
+    else
+      echo "Failed restore $db_name database"
+    fi
+
   fi
 done < "$dump_list"
-
-

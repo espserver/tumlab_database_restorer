@@ -57,6 +57,8 @@ do
     echo "db_vendor=$db_vendor"
     file_name=$(echo "$line" | awk -F '/' '{print $8}')
     echo "file_name=$file_name"
+    date=$(echo "$file_name" | awk -F '_' '{print $4,$5}'| awk -F '.' '{print $1}')
+    echo "date=$date"
     echo "$line"
     mysql -u ramiro -pRamiro --execute="DROP DATABASE $db_name;CREATE DATABASE $db_name"
     mysql -u ramiro -pRamiro "$db_name" < "$line"

@@ -1,44 +1,59 @@
 #!/bin/bash
+logger -p local0.debug -it tumlab_database_restorer "Start Execution script"
 
 # Path where the tumlab folders are located
 devices_path="/tumlab/syncthing/"
 echo "devices_path="$devices_path
+logger -p local0.debug -it tumlab_database_restorer "Path where the tumlab folders are located: $devices_path"
+
 
 json_restored_dbs="/tumlab/syncthing/dbs_restored_list.json"
 echo "$json_restored_dbs"
+logger -p local0.debug -it tumlab_database_restorer "Path where the json file are located: $json_restored_dbs"
 
 # Txt file location to list .sql files to restore
 dump_list="/tumlab/syncthing/dump.txt"
 echo "dump_list="$dump_list
+logger -p local0.debug -it tumlab_database_restorer "Path where the list .sql file to restore are located: $dump_list"
 
 # Maximum .sql file creation time to restore (in minutes)
 max_modification_time="5000"
 echo "max_modification_time="$max_modification_time
+logger -p local0.debug -it tumlab_database_restorer "Maximum .sql file creation time to restore (in minutes): $max_modification_time"
+
 # Server info
 public_ip=$(curl ifconfig.me)
 echo "$public_ip"
+logger -p local0.debug -it tumlab_database_restorer "Server IP: $public_ip"
 server_name=$(hostname)
 echo "$server_name"
+logger -p local0.debug -it tumlab_database_restorer "Server name: $server_name"
 id_server=1
 echo "$id_server"
+logger -p local0.debug -it tumlab_database_restorer "Server ID: $id_server"
 
 mysql_user="ramiro"
 mysql_password="Ramiro"
 postgres_user="postgres"
-postgres_password="Ramiro"
-echo $postgres_password
+# postgres_password="Ramiro"
+# echo $postgres_password
 
 
 # Search files in Syncting folder modified in 30 mins and type is .sql
+
 find "$devices_path" -type f -mmin -"$max_modification_time" -and -type f -iname "*.sql" > "$dump_list"
+logger -p local0.debug -it tumlab_database_restorer "looking for sql files modified $max_modification_time minutes ago in $devices_path and listing them in $dump_list"
 
 checkExitsFile() {
+    logger -p local0.debug -it tumlab_database_restorer "Using function check if exist file. File to check: $1"
     file="$1"
     retval=""
     if [[ -f "$file" ]]; then
         retval="true"
+        logger -p local0.debug -it tumlab_database_restorer "File exists?: $retval"
     else
         retval="false"
+        logger -p local0.debug -it tumlab_database_restorer "File exists?: $retval"
     fi
     echo $retval
 }
@@ -51,7 +66,6 @@ fi
 
 # se debe crear un archivo que contenga la contraseña del usuario de la base de datos
 # echo "192.168.0.1:5432:mibase:miusuario:micontraseña" >> ~/.pgpass todos los campos se pueden remplazar por el comodin * excepto la contraseña
-
 # Arreglo de bases de datos
 
 array_db_vendor=("mysql" "postgresql")

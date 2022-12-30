@@ -60,8 +60,10 @@ checkExitsFile() {
 
 exists_json_file=$(checkExitsFile "$json_restored_dbs")
 if [[ $exists_json_file == 'false' ]]; then
+  logger -p local0.debug -it tumlab_database_restorer "since the json does not exist, creating json"
   file_json_restored_dbs="{ \"id_server\":\"$id_server\", \"server_name\":\"$server_name\", \"ip\":\"$public_ip\", \"db_vendor\":{\"mysql\":[], \"postgresql\":[] } }"
   echo "$file_json_restored_dbs" | jq '.' >"$json_restored_dbs"
+  logger -p local0.debug -it tumlab_database_restorer "since the json does not exist, creating json: $json_restored_dbs"
 fi
 
 # se debe crear un archivo que contenga la contraseña del usuario de la base de datos
@@ -73,54 +75,81 @@ array_db_vendor=("mysql" "postgresql")
 # Ciclo encargado de ejecutar la restauracion de cada archivo dump enlistado en el txt de arriba
 while IFS= read -r line
 do
+  logger -p local0.debug -it tumlab_database_restorer "Start of cycle to restore the dbs from archive $dump_list"
   # Viariables name
 
   tumlab_name=$(echo "$line" | awk -F '/' '{print $4}')
+  logger -p local0.debug -it tumlab_database_restorer "Parameters to restore: tumlab_name=$tumlab_name"
   echo "tumlab_name=$tumlab_name"
   db_vendor=$(echo "$line" | awk -F '/' '{print $6}')
+  logger -p local0.debug -it tumlab_database_restorer "Parameters to restore: db_vendor=$db_vendor"
   echo "db_vendor=$db_vendor"
   app_name=$(echo "$line" | awk -F '/' '{print $7}')
+  logger -p local0.debug -it tumlab_database_restorer "Parameters to restore: app_name=$app_name"
   echo "app_name=$app_name"
   file_name=$(echo "$line" | awk -F '/' '{print $8}')
+  logger -p local0.debug -it tumlab_database_restorer "Parameters to restore: file_name=$file_name"
   echo "file_name=$file_name"
   date=$(echo "$file_name" | awk -F '_' '{print $4,$5}'| awk -F '.' '{print $1}')
+  logger -p local0.debug -it tumlab_database_restorer "Parameters to restore: date=$date"
   echo "date=$date"
   db_name=$(echo "$line" | awk -F '/' '{print $8}'| awk -F '.' '{print $1}'| tr '-' '_' | tr '[:upper:]' '[:lower:]')
+  logger -p local0.debug -it tumlab_database_restorer "Parameters to restore: db_name=$db_name"
   echo "db_name=$db_name"
 
   short_db_name=$(echo "$line" | awk -F '/' '{print $8}' |awk -F '-' '{print $1}' | tr '[:upper:]' '[:lower:]')
   echo "$short_db_name"
 
   old_db_record=$( cat $json_restored_dbs | grep "$short_db_name" | awk -F '"' '{print $4}')
-  echo "test print: $old_db_record" 
+  echo "test print: $old_db_record"
+  logger -p local0.debug -it tumlab_database_restorer "Old db name=$old_db_record"   
 
   id_batch="${file_name:2:1}"
+  logger -p local0.debug -it tumlab_database_restorer "Tumlab database to restore info id_batch=$id_batch"
   echo "id_batch:$id_batch"
+
   id_project="${file_name:4:1}"
+  logger -p local0.debug -it tumlab_database_restorer "Tumlab database to restore info id_project=$id_project"
   echo "id_project:$id_project"
+
   id_deparment="${file_name:6:1}"   
+  logger -p local0.debug -it tumlab_database_restorer "Tumlab database to restore info id_deparment=$id_deparment"
   echo "id_deparment:$id_deparment"
+
   id_town="${file_name:8:1}"
+  logger -p local0.debug -it tumlab_database_restorer "Tumlab database to restore info id_town=$id_town"
   echo "id_town:$id_town"
+
   id_institution="${file_name:10:1}"
+  logger -p local0.debug -it tumlab_database_restorer "Tumlab database to restore info id_institution=$id_institution"
   echo "id_institution:$id_institution"
+
   id_branch="${file_name:12:1}"
+  logger -p local0.debug -it tumlab_database_restorer "Tumlab database to restore info id_branch=$id_branch"
   echo "id_branch:$id_branch"
+  
   mac_address="${file_name:14:12}"
+  logger -p local0.debug -it tumlab_database_restorer "Tumlab database to restore info id_branch=$mac_address"
   echo "mac_address:$mac_address"
-  echo "$line"
+
   check_db_vendor_support="false"
     for item in "${array_db_vendor[@]}"; do
+      logger -p local0.debug -it tumlab_database_restorer "Start loop to check if db_vendor is supported"
         if [ "$item" == "$db_vendor" ]; then
             check_db_vendor_support="true"
             echo "db_vendor is supported?:$check_db_vendor_support"
+            logger -p local0.debug -it tumlab_database_restorer "db_vendor is supported?:$check_db_vendor_support"
         fi
+      logger -p local0.debug -it tumlab_database_restorer "End loop to check if db_vendor is supported"  
     done
 
   case "${db_vendor}" in
   "postgresql")
+    logger -p local0.debug -it tumlab_database_restorer "Case $db_vendor in cycle to restore the dbs"
     if [ "$db_name" == "$old_db_record" ]; then
+      logger -p local0.debug -it tumlab_database_restorer "Db to restore is equal to old db restored"
       echo "database $db_name not restored, already exists"
+      logger -p local0.debug -it tumlab_database_restorer "Database $db_name not restored, already exists"
     else
       nohup psql -h localhost -U $postgres_user -c "CREATE DATABASE $db_name"
       nohup psql -h localhost -U $postgres_user -d "$db_name" -f "$line"

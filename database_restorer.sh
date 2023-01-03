@@ -61,7 +61,7 @@ checkExitsFile() {
 exists_json_file=$(checkExitsFile "$json_restored_dbs")
 if [[ $exists_json_file == 'false' ]]; then
   file_json_restored_dbs="{ \"id_server\":\"$id_server\", \"server_name\":\"$server_name\", \"ip\":\"$public_ip\", \"db_vendor\":{\"mysql\":[], \"postgresql\":[] } }"
-  echo "$file_json_restored_dbs" | jq '.' >"$json_restored_dbs"
+  echo "$file_json_restored_dbs" | jq '.' >"$json_restored_dbs" 
   logger -p local0.debug -it tumlab_database_restorer "since the json does not exist, creating json: $json_restored_dbs"
 fi
 
@@ -130,7 +130,7 @@ do
   echo "id_branch:$id_branch"
   
   mac_address="${file_name:14:12}"
-  logger -p local0.debug -it tumlab_database_restorer "Tumlab database to restore info id_branch=$mac_address"
+  logger -p local0.debug -it tumlab_database_restorer "Tumlab database to restore info mac_address:$mac_address"
   echo "mac_address:$mac_address"
 
   check_db_vendor_support="false"
